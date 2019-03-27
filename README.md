@@ -1,3 +1,5 @@
+![screenshot.png](https://raw.githubusercontent.com/gonutz/commited/master/screenshot.png)
+
 # commited
 
 This is a Windows editor to use for git commit messages. To use it as the
