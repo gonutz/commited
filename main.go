@@ -16,7 +16,7 @@ Here are seven rules for git commit messages from
 6. Wrap the body at 72 characters
 7. Use the body to explain what and why vs. how
 
-This editor helps following these rules:
+This editor helps you follow these rules:
 
 - title and message are separate input fields, the commit message will have a
   blank line separating them (rule 1)
