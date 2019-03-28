@@ -126,12 +126,16 @@ func main() {
 		title.SetText(newTitle)
 
 		var newText string
-		lines := strings.Split(strings.TrimSpace(text.Text()), "\r\n")
+		clean := text.Text()
+		clean = strings.TrimSpace(clean)
+		clean = strings.Replace(clean, "\t", "    ", -1)
+		lines := strings.Split(clean, "\r\n")
 		for _, line := range lines {
-			a, b := splitLine(line)
+			indent := indentation(line)
+			a, b := splitLine(line, indent)
 			newText += a + "\r\n"
 			for b != "" {
-				a, b = splitLine(b)
+				a, b = splitLine(b, indent)
 				newText += a + "\r\n"
 			}
 		}
@@ -190,8 +194,9 @@ func main() {
 }
 
 // split line returns the two parts of a line if it is too long, or the line and
-// the empty string if the line is already short enough.
-func splitLine(s string) (a, b string) {
+// the empty string if the line is already short enough. The given indent is
+// used as a prefix for all new lines.
+func splitLine(s, indent string) (a, b string) {
 	const maxLineLen = 72
 
 	if len(s) <= maxLineLen {
@@ -202,7 +207,7 @@ func splitLine(s string) (a, b string) {
 	if i == -1 {
 		return s, "" // do not split, leave it a long line
 	}
-	return s[:i], s[i+1:]
+	return s[:i], indent + s[i+1:]
 }
 
 func capitalize(s string) string {
@@ -211,4 +216,15 @@ func capitalize(s string) string {
 	}
 	r, size := utf8.DecodeRuneInString(s)
 	return string(unicode.ToUpper(r)) + s[size:]
+}
+
+func indentation(s string) string {
+	spaces := 0
+	for _, r := range s {
+		if unicode.IsLetter(r) || unicode.IsDigit(r) {
+			break
+		}
+		spaces++
+	}
+	return strings.Repeat(" ", spaces)
 }
