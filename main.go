@@ -32,8 +32,10 @@ Rules 5 and 7 are about the message's content so this is left to the author :-)
 package main
 
 import (
+	"bytes"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -144,6 +146,10 @@ func main() {
 		if err := ioutil.WriteFile(msgPath, []byte(output), 0666); err != nil {
 			wui.MessageBoxError("Error", "Failed to save commit message: "+err.Error())
 		}
+		// after a commit we want the contents to be empty when we open commited
+		// the next time
+		text.SetText("")
+		title.SetText("")
 		w.Close()
 	})
 	toggleFocus := func() {
@@ -156,8 +162,29 @@ func main() {
 	w.SetShortcut(wui.ShortcutKeys{Key: w32.VK_TAB}, toggleFocus)
 	w.SetShortcut(wui.ShortcutKeys{Mod: wui.ModShift, Key: w32.VK_TAB}, toggleFocus)
 
+	sessionPath := filepath.Join(os.Getenv("APPDATA"), "commited_last")
 	w.SetOnShow(func() {
+		// restore the last contents for title and message text
+		data, err := ioutil.ReadFile(sessionPath)
+		if err == nil {
+			titleText := string(data)
+			msgText := ""
+			if i := bytes.Index(data, []byte{0}); i != -1 {
+				titleText = string(data[:i])
+				msgText = string(data[i+1:])
+			}
+			title.SetText(titleText)
+			text.SetText(msgText)
+		}
 		title.Focus()
+	})
+	w.SetOnClose(func() {
+		// remember the contents for the next time we open commited
+		ioutil.WriteFile(
+			sessionPath,
+			append(append([]byte(title.Text()), 0), []byte(text.Text())...),
+			0666,
+		)
 	})
 	w.Show()
 }
