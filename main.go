@@ -38,7 +38,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"time"
 	"unicode"
 	"unicode/utf8"
 
@@ -82,27 +81,21 @@ func main() {
 	w.Add(title)
 	title.SetBounds(60, 100, w.ClientWidth()-120, 25)
 	title.SetFont(fixedFont)
+	title.SetCharacterLimit(72)
 
 	titleLength := wui.NewLabel()
 	w.Add(titleLength)
 	titleLength.SetBounds(w.ClientWidth()-50, 100, 40, 25)
-
-	go func() {
-		// update the title length label when the title changes
-		// right now the wui library does not provide an event when typing in a
-		// text box, thus we just poll for changes 10 times a second
-		for {
-			n := utf8.RuneCountInString(title.Text())
-			text := strconv.Itoa(n)
-			if n > 50 {
-				text += " !"
-			}
-			if titleLength.Text() != text {
-				titleLength.SetText(text)
-			}
-			time.Sleep(100 * time.Millisecond)
+	title.SetOnTextChange(func() {
+		n := utf8.RuneCountInString(title.Text())
+		text := strconv.Itoa(n)
+		if n > 50 {
+			text += " !"
 		}
-	}()
+		if titleLength.Text() != text {
+			titleLength.SetText(text)
+		}
+	})
 
 	text := wui.NewTextEdit()
 	w.Add(text)
