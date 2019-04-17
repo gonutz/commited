@@ -140,6 +140,23 @@ func main() {
 		if len(text.Text()) > 0 {
 			output += "\r\n\r\n" + text.Text()
 		}
+
+		// warn if a line start with "#"
+		commentAt := ""
+		if strings.HasPrefix(output, "#") {
+			commentAt = "Your title"
+		} else if strings.Contains(output, "\n#") {
+			commentAt = "One or more lines of your commit mesage"
+		}
+		if commentAt != "" {
+			if !wui.MessageBoxYesNo(
+				"Comments Found",
+				commentAt+" starts with a hash (#) character which is usually interpreted by git commit as a comment.\r\n\r\nMake sure you use commit option\r\n    --cleanup=whitespace\r\nto allow lines to start with # in your message.\r\n\r\nDo you really want to commit now?",
+			) {
+				return
+			}
+		}
+
 		if err := ioutil.WriteFile(msgPath, []byte(output), 0666); err != nil {
 			wui.MessageBoxError("Error", "Failed to save commit message: "+err.Error())
 		}
