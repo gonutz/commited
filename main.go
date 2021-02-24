@@ -41,8 +41,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/gonutz/w32"
-	"github.com/gonutz/wui"
+	"github.com/gonutz/wui/v2"
 )
 
 func main() {
@@ -55,17 +54,20 @@ func main() {
 
 	font, _ := wui.NewFont(wui.FontDesc{Name: "Tahoma", Height: -13})
 	fixedFont, _ := wui.NewFont(wui.FontDesc{Name: "Consolas", Height: -15})
-	w := wui.NewDialogWindow()
+	w := wui.NewWindow()
+	w.SetHasMinButton(false)
+	w.SetHasMaxButton(false)
+	w.SetResizable(false)
 	w.SetFont(font)
 	w.SetTitle("Enter Commit Message")
-	w.SetClientSize(800, 600)
+	w.SetInnerSize(800, 600)
 
 	writeLine := func(text string, y int) {
 		l := wui.NewLabel()
 		w.Add(l)
 		l.SetText(text)
-		l.SetBounds(0, y, w.ClientWidth(), 20)
-		l.SetCenterAlign()
+		l.SetBounds(0, y, w.InnerWidth(), 20)
+		l.SetAlignment(wui.AlignCenter)
 	}
 	writeLine("Press CTRL+ENTER to commit", 20)
 	writeLine("Press ESC to abort commit", 40)
@@ -74,18 +76,18 @@ func main() {
 	titleCap := wui.NewLabel()
 	w.Add(titleCap)
 	titleCap.SetBounds(0, 100, 50, 25)
-	titleCap.SetRightAlign()
+	titleCap.SetAlignment(wui.AlignRight)
 	titleCap.SetText("Title")
 
 	title := wui.NewEditLine()
 	w.Add(title)
-	title.SetBounds(60, 100, w.ClientWidth()-120, 25)
+	title.SetBounds(60, 100, w.InnerWidth()-120, 25)
 	title.SetFont(fixedFont)
 	title.SetCharacterLimit(72)
 
 	titleLength := wui.NewLabel()
 	w.Add(titleLength)
-	titleLength.SetBounds(w.ClientWidth()-50, 100, 40, 25)
+	titleLength.SetBounds(w.InnerWidth()-50, 100, 40, 25)
 	title.SetOnTextChange(func() {
 		n := utf8.RuneCountInString(title.Text())
 		text := strconv.Itoa(n)
@@ -99,10 +101,10 @@ func main() {
 
 	text := wui.NewTextEdit()
 	w.Add(text)
-	text.SetBounds(10, 130, w.ClientWidth()-20, w.ClientHeight()-140)
+	text.SetBounds(10, 130, w.InnerWidth()-20, w.InnerHeight()-140)
 	text.SetFont(fixedFont)
 
-	w.SetShortcut(wui.ShortcutKeys{Mod: wui.ModControl, Rune: 'F'}, func() {
+	format := func() {
 		newTitle := title.Text()
 		newTitle = strings.TrimSpace(newTitle)
 		for {
@@ -133,9 +135,10 @@ func main() {
 			}
 		}
 		text.SetText(strings.TrimSuffix(newText, "\r\n"))
-	})
-	w.SetShortcut(wui.ShortcutKeys{Key: w32.VK_ESCAPE}, w.Close)
-	w.SetShortcut(wui.ShortcutKeys{Mod: wui.ModControl, Key: w32.VK_RETURN}, func() {
+	}
+	w.SetShortcut(format, wui.KeyControl, wui.KeyF)
+	w.SetShortcut(w.Close, wui.KeyEscape)
+	commit := func() {
 		output := title.Text()
 		if len(text.Text()) > 0 {
 			output += "\r\n\r\n" + text.Text()
@@ -165,16 +168,8 @@ func main() {
 		text.SetText("")
 		title.SetText("")
 		w.Close()
-	})
-	toggleFocus := func() {
-		if title.HasFocus() {
-			text.Focus()
-		} else {
-			title.Focus()
-		}
 	}
-	w.SetShortcut(wui.ShortcutKeys{Key: w32.VK_TAB}, toggleFocus)
-	w.SetShortcut(wui.ShortcutKeys{Mod: wui.ModShift, Key: w32.VK_TAB}, toggleFocus)
+	w.SetShortcut(commit, wui.KeyControl, wui.KeyReturn)
 
 	sessionPath := filepath.Join(os.Getenv("APPDATA"), "commited_last")
 	w.SetOnShow(func() {
