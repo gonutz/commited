@@ -35,7 +35,7 @@ Rules 5 and 7 are about the message's content so this is left to the author :-)
 
 If you have [Go](https://golang.org/) installed, just run
 
-	go get -u github.com/gonutz/commited
+	go install github.com/gonutz/commited@latest
 
 to download (-u for getting the latest update from Github), build and install
 the executable.
