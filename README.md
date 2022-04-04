@@ -37,5 +37,4 @@ If you have [Go](https://golang.org/) installed, just run
 
 	go install github.com/gonutz/commited@latest
 
-to download (-u for getting the latest update from Github), build and install
-the executable.
+to download, build and install the latest verison.
