@@ -33,7 +33,7 @@ Rules 5 and 7 are about the message's content so this is left to the author :-)
 
 # build
 
-If you have [Go](https://golang.org/) installed, just run
+If you have [Go](https://go.dev/) installed, just run
 
 	go install github.com/gonutz/commited@latest
 
