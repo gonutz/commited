@@ -52,8 +52,10 @@ func main() {
 
 	msgPath := os.Args[1]
 
-	font, _ := wui.NewFont(wui.FontDesc{Name: "Tahoma", Height: -13})
-	fixedFont, _ := wui.NewFont(wui.FontDesc{Name: "Consolas", Height: -15})
+	// Change the lineH and font heights to scale the UI.
+	const lineH = 25
+	font, _ := wui.NewFont(wui.FontDesc{Name: "Tahoma", Height: -17})
+	fixedFont, _ := wui.NewFont(wui.FontDesc{Name: "Consolas", Height: -19})
 	w := wui.NewWindow()
 	w.SetHasMinButton(false)
 	w.SetHasMaxButton(false)
@@ -62,32 +64,35 @@ func main() {
 	w.SetTitle("Enter Commit Message")
 	w.SetInnerSize(800, 600)
 
-	writeLine := func(text string, y int) {
+	lineY := 0
+	writeLine := func(text string) {
+		lineY += lineH
 		l := wui.NewLabel()
 		w.Add(l)
 		l.SetText(text)
-		l.SetBounds(0, y, w.InnerWidth(), 20)
+		l.SetBounds(0, lineY, w.InnerWidth(), lineH)
 		l.SetAlignment(wui.AlignCenter)
 	}
-	writeLine("Press CTRL+ENTER to commit", 20)
-	writeLine("Press ESC to abort commit", 40)
-	writeLine("Press CTRL+F to format the title and message", 60)
+	writeLine("Press CTRL+ENTER to commit")
+	writeLine("Press ESC to abort commit")
+	writeLine("Press CTRL+F to format the title and message")
 
+	y := lineY + 2*lineH
 	titleCap := wui.NewLabel()
 	w.Add(titleCap)
-	titleCap.SetBounds(0, 100, 50, 25)
+	titleCap.SetBounds(0, y, 50, lineH+5)
 	titleCap.SetAlignment(wui.AlignRight)
 	titleCap.SetText("Title")
 
 	title := wui.NewEditLine()
 	w.Add(title)
-	title.SetBounds(60, 100, w.InnerWidth()-120, 25)
+	title.SetBounds(60, y, w.InnerWidth()-120, lineH+5)
 	title.SetFont(fixedFont)
 	title.SetCharacterLimit(72)
 
 	titleLength := wui.NewLabel()
 	w.Add(titleLength)
-	titleLength.SetBounds(w.InnerWidth()-50, 100, 40, 25)
+	titleLength.SetBounds(w.InnerWidth()-50, y, 40, lineH+5)
 	title.SetOnTextChange(func() {
 		n := utf8.RuneCountInString(title.Text())
 		text := strconv.Itoa(n)
@@ -99,9 +104,10 @@ func main() {
 		}
 	})
 
+	y += lineH + 10
 	text := wui.NewTextEdit()
 	w.Add(text)
-	text.SetBounds(10, 130, w.InnerWidth()-20, w.InnerHeight()-140)
+	text.SetBounds(10, y, w.InnerWidth()-20, w.InnerHeight()-y-10)
 	text.SetFont(fixedFont)
 
 	format := func() {
