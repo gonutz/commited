@@ -51,6 +51,41 @@ func main() {
 	}
 
 	msgPath := os.Args[1]
+	sessionPath := filepath.Join(os.Getenv("APPDATA"), "commited_last")
+
+	var msg string
+	if data, err := ioutil.ReadFile(msgPath); err == nil {
+		msg = string(data)
+	}
+
+	msg = strings.Replace(msg, "\r", "", -1)
+	lines := strings.Split(msg, "\n")
+
+	commentStart := "#" // The default comment character.
+
+	// Find the comment start character by looking at the existing message.
+	// The last five lines will contain an explanation of how to edit Git
+	// messages. They all start with the comment character.
+	var starts []string
+	for _, line := range lines {
+		if line != "" {
+			starts = append(starts, start(line))
+		}
+	}
+	if len(starts) > 5 && allTheSame(starts[len(starts)-5:]) {
+		commentStart = starts[len(starts)-1]
+	}
+
+	var nonCommentLines []string
+	for _, line := range lines {
+		if !strings.HasPrefix(line, commentStart) {
+			nonCommentLines = append(nonCommentLines, line)
+		}
+	}
+
+	for len(nonCommentLines) > 0 && nonCommentLines[0] == "" {
+		nonCommentLines = nonCommentLines[1:]
+	}
 
 	// Change the lineH and font heights to scale the UI.
 	const lineH = 25
@@ -143,24 +178,28 @@ func main() {
 		text.SetText(strings.TrimSuffix(newText, "\r\n"))
 	}
 	w.SetShortcut(format, wui.KeyControl, wui.KeyF)
-	w.SetShortcut(w.Close, wui.KeyEscape)
+	abort := func() {
+		ioutil.WriteFile(msgPath, nil, 0666)
+		w.Close()
+	}
+	w.SetShortcut(abort, wui.KeyEscape)
 	commit := func() {
 		output := title.Text()
 		if len(text.Text()) > 0 {
 			output += "\r\n\r\n" + text.Text()
 		}
 
-		// warn if a line start with "#"
+		// warn if a line will be interpreted as a comment
 		commentAt := ""
-		if strings.HasPrefix(output, "#") {
+		if strings.HasPrefix(output, commentStart) {
 			commentAt = "Your title"
-		} else if strings.Contains(output, "\n#") {
+		} else if strings.Contains(output, "\n"+commentStart) {
 			commentAt = "One or more lines of your commit mesage"
 		}
 		if commentAt != "" {
 			if !wui.MessageBoxYesNo(
 				"Comments Found",
-				commentAt+" starts with a hash (#) character which is usually interpreted by git commit as a comment.\r\n\r\nMake sure you use commit option\r\n    --cleanup=whitespace\r\nto allow lines to start with # in your message.\r\n\r\nDo you really want to commit now?",
+				commentAt+" starts with a '"+commentStart+"' character which is interpreted by git commit as a comment.\r\n\r\nMake sure you use commit option\r\n    --cleanup=whitespace\r\nto allow lines to start with '"+commentStart+"' in your message.\r\n\r\nDo you really want to commit now?",
 			) {
 				return
 			}
@@ -177,8 +216,7 @@ func main() {
 	}
 	w.SetShortcut(commit, wui.KeyControl, wui.KeyReturn)
 
-	sessionPath := filepath.Join(os.Getenv("APPDATA"), "commited_last")
-	w.SetOnShow(func() {
+	readLastSession := func() {
 		// restore the last contents for title and message text
 		data, err := ioutil.ReadFile(sessionPath)
 		if err == nil {
@@ -190,6 +228,21 @@ func main() {
 			}
 			title.SetText(titleText)
 			text.SetText(msgText)
+		}
+	}
+
+	copyMessageToGui := func() {
+		titleText := nonCommentLines[0]
+		msgText := strings.TrimSpace(strings.Join(nonCommentLines[1:], "\r\n"))
+		title.SetText(titleText)
+		text.SetText(msgText)
+	}
+
+	w.SetOnShow(func() {
+		if len(nonCommentLines) == 0 {
+			readLastSession()
+		} else {
+			copyMessageToGui()
 		}
 		title.Focus()
 	})
@@ -238,4 +291,20 @@ func indentation(s string) string {
 		spaces++
 	}
 	return strings.Repeat(" ", spaces)
+}
+
+func start(s string) string {
+	for _, r := range s {
+		return string(r)
+	}
+	return ""
+}
+
+func allTheSame(s []string) bool {
+	for i := 1; i < len(s); i++ {
+		if s[i-1] != s[i] {
+			return false
+		}
+	}
+	return true
 }
